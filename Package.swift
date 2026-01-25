@@ -14,7 +14,7 @@ let package = Package(
 	targets: [
 		.target(
 			name: "SwiftCore",
-			dependencies: ["Measure"],
+			dependencies: ["Measure", "NativeTaskID"],
 			path: "Sources/SwiftCore"
 		),
 		.target(
@@ -25,6 +25,11 @@ let package = Package(
 		.target(
 			name: "NativeTime",
 			path: "Sources/NativeTime",
+			publicHeadersPath: "include"
+		),
+		.target(
+			name: "NativeTaskID",
+			path: "Sources/NativeTaskID",
 			publicHeadersPath: "include"
 		),
 		.testTarget(

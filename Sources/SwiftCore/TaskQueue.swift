@@ -6,6 +6,7 @@
 //
 
 import Dispatch
+import NativeTaskID
 
 // MARK: - TaskQueue
 
@@ -31,11 +32,96 @@ public final class TaskQueue {
 
 	// MARK: + Public scope
 
-	public static let main: SerialTaskQueue = .init(mainQueue)
+	public enum TaskExecutionState: String,
+									Sendable,
+									Codable {
+		case created
+		case started
+		case completed
+	}
 
-	public static let `default`: SerialTaskQueue = .init(defaultQueue)
+	public enum TaskDispatchType: String,
+								  Sendable,
+								  Codable {
+		case sync
+		case async
+		case syncBarrier
+		case asyncBarrier
+	}
 
-	public static let background: ConcurrentTaskQueue = .init(backgroundQueue)
+	public struct TaskInfo: Sendable,
+							Hashable,
+							Codable {
+		public let taskId: UInt64
+		public let file: String
+		public let line: UInt
+		public let function: String
+
+		@inlinable
+		public init(
+			taskId: UInt64 = NativeTaskID.nativeTaskIDNext(),
+			file: StaticString,
+			line: UInt,
+			function: StaticString
+		) {
+			self.taskId = taskId
+			self.file = String(describing: file)
+			self.line = line
+			self.function = String(describing: function)
+		}
+	}
+
+	public struct TaskQueueEvent: Sendable,
+								  Codable,
+								  Hashable {
+		public let queueName: String
+		public let taskInfo: TaskInfo
+		public let executionState: TaskExecutionState
+		public let dispatchType: TaskDispatchType
+		public let timestamp: MonotonicNanostamp
+
+		init(
+			queueName: String,
+			taskInfo: TaskInfo,
+			executionState: TaskExecutionState,
+			dispatchType: TaskDispatchType,
+			timestamp: MonotonicNanostamp = .now
+		) {
+			self.queueName = queueName
+			self.taskInfo = taskInfo
+			self.executionState = executionState
+			self.dispatchType = dispatchType
+			self.timestamp = timestamp
+		}
+	}
+
+	public typealias TaskQueueEventSink = @Sendable (TaskQueueEvent) -> Void
+
+	nonisolated(unsafe)
+	public static private(set) var eventSink: TaskQueueEventSink?
+
+	public static let main: SerialTaskQueue = .init(
+		mainQueue,
+		name: "main"
+	)
+
+	public static let `default`: SerialTaskQueue = .init(
+		defaultQueue,
+		name: "default"
+	)
+
+	public static let background: ConcurrentTaskQueue = .init(
+		backgroundQueue,
+		name: "background"
+	)
+
+	public static func setEventSink(_ sink: @escaping TaskQueueEventSink) {
+		guard eventSink == nil else {
+			return
+		}
+
+		eventSink = sink
+	}
 }
 
 // MARK: - SerialTaskQueue
@@ -45,19 +131,106 @@ public struct SerialTaskQueue: Sendable {
 	// MARK: + Private scope
 
 	private let queue: DispatchQueue
+	private let name: String
 
-	fileprivate init(_ queue: DispatchQueue) {
+	fileprivate init(
+		_ queue: DispatchQueue,
+		name: String
+	) {
 		self.queue = queue
+		self.name = name
 	}
 
 	// MARK: + Public scope
 
-	public func sync<T>(_ task: () throws -> T) rethrows -> T {
-		try queue.sync(execute: task)
+	public func sync<T>(
+		_ task: () throws -> T,
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function
+	) rethrows -> T {
+		let taskInfo = TaskQueue.TaskInfo(
+			file: file,
+			line: line,
+			function: function
+		)
+
+		TaskQueue.eventSink?(
+			.init(
+				queueName: name,
+				taskInfo: taskInfo,
+				executionState: .created,
+				dispatchType: .sync
+			)
+		)
+
+		return try queue.sync(execute: {
+			TaskQueue.eventSink?(
+				.init(
+					queueName: name,
+					taskInfo: taskInfo,
+					executionState: .started,
+					dispatchType: .sync
+				)
+			)
+
+			defer {
+				TaskQueue.eventSink?(
+					.init(
+						queueName: name,
+						taskInfo: taskInfo,
+						executionState: .completed,
+						dispatchType: .sync
+					)
+				)
+			}
+
+			return try task()
+		})
 	}
 
-	public func async(_ task: @Sendable @escaping () -> Void) {
-		queue.async(execute: task)
+	public func async(
+		_ task: @Sendable @escaping () -> Void,
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function
+	) {
+		let taskInfo = TaskQueue.TaskInfo(
+			file: file,
+			line: line,
+			function: function
+		)
+
+		TaskQueue.eventSink?(
+			.init(
+				queueName: name,
+				taskInfo: taskInfo,
+				executionState: .created,
+				dispatchType: .async
+			)
+		)
+
+		queue.async(execute: {
+			TaskQueue.eventSink?(
+				.init(
+					queueName: name,
+					taskInfo: taskInfo,
+					executionState: .started,
+					dispatchType: .async
+				)
+			)
+
+			task()
+
+			TaskQueue.eventSink?(
+				.init(
+					queueName: name,
+					taskInfo: taskInfo,
+					executionState: .completed,
+					dispatchType: .async
+				)
+			)
+		})
 	}
 }
 
@@ -68,32 +241,201 @@ public struct ConcurrentTaskQueue: Sendable {
 	// MARK: + Private scope
 
 	private let queue: DispatchQueue
+	private let name: String
 
-	fileprivate init(_ queue: DispatchQueue) {
+	fileprivate init(
+		_ queue: DispatchQueue,
+		name: String
+	) {
 		self.queue = queue
+		self.name = name
 	}
 
-	// MARK: + Public scope
+	// MARK: + Public scope¯
 
-	public func sync<T>(_ task: () throws -> T) rethrows -> T {
-		try queue.sync(execute: task)
+	public func sync<T>(
+		_ task: () throws -> T,
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function
+	) rethrows -> T {
+		let taskInfo = TaskQueue.TaskInfo(
+			file: file,
+			line: line,
+			function: function
+		)
+
+		TaskQueue.eventSink?(
+			.init(
+				queueName: name,
+				taskInfo: taskInfo,
+				executionState: .created,
+				dispatchType: .sync
+			)
+		)
+
+		return try queue.sync(execute: {
+			TaskQueue.eventSink?(
+				.init(
+					queueName: name,
+					taskInfo: taskInfo,
+					executionState: .started,
+					dispatchType: .sync
+				)
+			)
+
+			defer {
+				TaskQueue.eventSink?(
+					.init(
+						queueName: name,
+						taskInfo: taskInfo,
+						executionState: .completed,
+						dispatchType: .sync
+					)
+				)
+			}
+
+			return try task()
+		})
 	}
 
-	public func async(_ task: @Sendable @escaping () -> Void) {
-		queue.async(execute: task)
+	public func async(
+		_ task: @Sendable @escaping () -> Void,
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function
+	) {
+		let taskInfo = TaskQueue.TaskInfo(
+			file: file,
+			line: line,
+			function: function
+		)
+
+		TaskQueue.eventSink?(
+			.init(
+				queueName: name,
+				taskInfo: taskInfo,
+				executionState: .created,
+				dispatchType: .async
+			)
+		)
+
+		queue.async(execute: {
+			TaskQueue.eventSink?(
+				.init(
+					queueName: name,
+					taskInfo: taskInfo,
+					executionState: .started,
+					dispatchType: .async
+				)
+			)
+
+			task()
+
+			TaskQueue.eventSink?(
+				.init(
+					queueName: name,
+					taskInfo: taskInfo,
+					executionState: .completed,
+					dispatchType: .async
+				)
+			)
+		})
 	}
 
-	public func syncBarrier<T>(_ task: () throws -> T) rethrows -> T {
-		try queue.sync(
+	public func syncBarrier<T>(
+		_ task: () throws -> T,
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function
+	) rethrows -> T {
+		let taskInfo = TaskQueue.TaskInfo(
+			file: file,
+			line: line,
+			function: function
+		)
+
+		TaskQueue.eventSink?(
+			.init(
+				queueName: name,
+				taskInfo: taskInfo,
+				executionState: .created,
+				dispatchType: .syncBarrier
+			)
+		)
+
+		return try queue.sync(
 			flags: .barrier,
-			execute: task
+			execute: {
+				TaskQueue.eventSink?(
+					.init(
+						queueName: name,
+						taskInfo: taskInfo,
+						executionState: .started,
+						dispatchType: .syncBarrier
+					)
+				)
+
+				defer {
+					TaskQueue.eventSink?(
+						.init(
+							queueName: name,
+							taskInfo: taskInfo,
+							executionState: .completed,
+							dispatchType: .syncBarrier
+						)
+					)
+				}
+
+				return try task()
+			}
 		)
 	}
 
-	public func asyncBarrier(_ task: @escaping @Sendable () -> Void) {
+	public func asyncBarrier(
+		_ task: @escaping @Sendable () -> Void,
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function
+	) {
+		let taskInfo = TaskQueue.TaskInfo(
+			file: file,
+			line: line,
+			function: function
+		)
+
+		TaskQueue.eventSink?(
+			.init(
+				queueName: name,
+				taskInfo: taskInfo,
+				executionState: .created,
+				dispatchType: .asyncBarrier
+			)
+		)
+
 		queue.async(
 			flags: .barrier,
-			execute: task
+			execute: {
+				TaskQueue.eventSink?(
+					.init(
+						queueName: name,
+						taskInfo: taskInfo,
+						executionState: .started,
+						dispatchType: .asyncBarrier
+					)
+				)
+
+				task()
+
+				TaskQueue.eventSink?(
+					.init(
+						queueName: name,
+						taskInfo: taskInfo,
+						executionState: .completed,
+						dispatchType: .asyncBarrier
+					)
+				)
+			}
 		)
 	}
 }
