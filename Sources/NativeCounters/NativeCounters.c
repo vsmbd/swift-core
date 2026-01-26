@@ -1,11 +1,11 @@
 //
-//  NativeTaskID.c
+//  NativeCounters.c
 //  SwiftCore
 //
 //  Created by vsmbd on 25/01/26.
 //
 
-#include "NativeTaskID.h"
+#include "NativeCounters.h"
 
 #if defined(__APPLE__)
 
@@ -47,6 +47,6 @@ uint64_t nextTaskID(void) {
 
 #else
 
-#error "NativeTaskID is not supported on this platform."
+#error "NativeCounters is not supported on this platform."
 
 #endif

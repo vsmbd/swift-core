@@ -12,25 +12,25 @@ public struct WallNanostamp: Equatable,
 							 Comparable,
 							 Hashable,
 							 Sendable {
-    public let unixEpochNanoseconds: UInt64
+	public let unixEpochNanoseconds: UInt64
 
-    @inlinable
-    public init(unixEpochNanoseconds: UInt64) {
-        self.unixEpochNanoseconds = unixEpochNanoseconds
-    }
+	@inlinable
+	public init(unixEpochNanoseconds: UInt64) {
+		self.unixEpochNanoseconds = unixEpochNanoseconds
+	}
 
-    @inlinable
+	@inlinable
 	public static var now: Self {
-		.init(unixEpochNanoseconds: NativeTime.wallNanos())
-    }
+		.init(unixEpochNanoseconds: wallNanos())
+	}
 
-    @inlinable
+	@inlinable
 	public static func < (
 		leftValue: Self,
 		rightValue: Self
 	) -> Bool {
-        leftValue.unixEpochNanoseconds < rightValue.unixEpochNanoseconds
-    }
+		leftValue.unixEpochNanoseconds < rightValue.unixEpochNanoseconds
+	}
 }
 
 extension WallNanostamp: Codable {

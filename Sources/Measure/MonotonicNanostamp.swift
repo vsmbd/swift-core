@@ -12,25 +12,25 @@ public struct MonotonicNanostamp: Equatable,
 								  Comparable,
 								  Hashable,
 								  Sendable {
-    public let nanoseconds: UInt64
+	public let nanoseconds: UInt64
 
-    @inlinable
+	@inlinable
 	public init(nanoseconds: UInt64) {
 		self.nanoseconds = nanoseconds
 	}
 
 	@inlinable
 	public static var now: Self {
-		.init(nanoseconds: NativeTime.monotonicNanos())
+		.init(nanoseconds: monotonicNanos())
 	}
-	
+
 	@inlinable
 	public static func < (
 		leftValue: Self,
 		rightValue: Self
 	) -> Bool {
-        leftValue.nanoseconds < rightValue.nanoseconds
-    }
+		leftValue.nanoseconds < rightValue.nanoseconds
+	}
 }
 
 extension MonotonicNanostamp: Codable {

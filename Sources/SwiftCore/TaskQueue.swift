@@ -6,7 +6,7 @@
 //
 
 import Dispatch
-import NativeTaskID
+import NativeCounters
 
 // MARK: - TaskQueue
 
@@ -59,7 +59,7 @@ public final class TaskQueue {
 
 		@inlinable
 		public init(
-			taskId: UInt64 = NativeTaskID.nextTaskID(),
+			taskId: UInt64 = nextTaskID(),
 			file: StaticString,
 			line: UInt,
 			function: StaticString

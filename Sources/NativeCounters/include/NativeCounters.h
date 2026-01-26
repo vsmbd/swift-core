@@ -1,12 +1,12 @@
 //
-//  NativeTaskID.h
+//  NativeCounters.h
 //  SwiftCore
 //
 //  Created by vsmbd on 25/01/26.
 //
 
-#ifndef NATIVE_TASKID_H
-#define NATIVE_TASKID_H
+#ifndef NATIVE_COUNTERS_H
+#define NATIVE_COUNTERS_H
 
 #include <stdint.h>
 
@@ -22,4 +22,4 @@ uint64_t nextTaskID(void);
 } // extern "C"
 #endif
 
-#endif // NATIVE_TASKID_H
+#endif // NATIVE_COUNTERS_H
