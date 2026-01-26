@@ -16,7 +16,7 @@ extern "C" {
 
 /// Returns a monotonically increasing task id (starting from 1).
 /// Thread-safe on supported platforms/toolchains.
-uint64_t nativeTaskIDNext(void);
+uint64_t nextTaskID(void);
 
 #ifdef __cplusplus
 } // extern "C"

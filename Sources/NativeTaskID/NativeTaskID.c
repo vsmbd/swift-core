@@ -13,11 +13,11 @@
 
 #include <stdatomic.h>
 
-static _Atomic uint64_t nativeCounterNextTaskIdValue = 0;
+static _Atomic uint64_t taskID = 0;
 
-uint64_t nativeTaskIDNext(void) {
+uint64_t nextTaskID(void) {
 	// relaxed is sufficient for uniqueness/monotonicity of the returned value
-	return atomic_fetch_add_explicit(&nativeCounterNextTaskIdValue, 1, memory_order_relaxed) + 1;
+	return atomic_fetch_add_explicit(&taskID, 1, memory_order_relaxed) + 1;
 }
 
 #elif defined(__linux__)
@@ -26,10 +26,10 @@ uint64_t nativeTaskIDNext(void) {
 
 #include <stdatomic.h>
 
-static _Atomic uint64_t nativeCounterNextTaskIdValue = 0;
+static _Atomic uint64_t taskID = 0;
 
-uint64_t nativeTaskIDNext(void) {
-	return atomic_fetch_add_explicit(&nativeCounterNextTaskIdValue, 1, memory_order_relaxed) + 1;
+uint64_t nextTaskID(void) {
+	return atomic_fetch_add_explicit(&taskID, 1, memory_order_relaxed) + 1;
 }
 
 #elif defined(_WIN32)
@@ -38,11 +38,11 @@ uint64_t nativeTaskIDNext(void) {
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-static LONG64 nativeCounterNextTaskIdValue = 0;
+static LONG64 taskID = 0;
 
-uint64_t nativeTaskIDNext(void) {
+uint64_t nextTaskID(void) {
 	// Returns incremented value.
-	return (uint64_t)InterlockedIncrement64(&nativeCounterNextTaskIdValue);
+	return (uint64_t)InterlockedIncrement64(&taskID);
 }
 
 #else

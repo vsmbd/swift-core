@@ -59,7 +59,7 @@ public final class TaskQueue {
 
 		@inlinable
 		public init(
-			taskId: UInt64 = NativeTaskID.nativeTaskIDNext(),
+			taskId: UInt64 = NativeTaskID.nextTaskID(),
 			file: StaticString,
 			line: UInt,
 			function: StaticString
