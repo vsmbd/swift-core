@@ -57,6 +57,10 @@ public final class TaskQueue {
 	public struct TaskInfo: Sendable,
 							Hashable,
 							Codable {
+		public enum Key {
+			public static let taskId = "task_id"
+		}
+
 		public let taskId: UInt64
 		public let file: String
 		public let line: UInt
