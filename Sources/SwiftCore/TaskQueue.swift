@@ -6,7 +6,7 @@
 //
 
 import Dispatch
-import NativeCounters
+import SwiftCoreNativeCounters
 
 // MARK: - TaskQueue
 

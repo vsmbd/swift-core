@@ -14,7 +14,7 @@ let package = Package(
 	targets: [
 		.target(
 			name: "SwiftCore",
-			dependencies: ["Measure", "NativeCounters"],
+			dependencies: ["Measure", "SwiftCoreNativeCounters"],
 			path: "Sources/SwiftCore"
 		),
 		.target(
@@ -28,8 +28,8 @@ let package = Package(
 			publicHeadersPath: "include"
 		),
 		.target(
-			name: "NativeCounters",
-			path: "Sources/NativeCounters",
+			name: "SwiftCoreNativeCounters",
+			path: "Sources/SwiftCoreNativeCounters",
 			publicHeadersPath: "include"
 		),
 		.testTarget(
