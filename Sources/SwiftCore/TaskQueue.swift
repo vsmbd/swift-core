@@ -13,6 +13,9 @@ import SwiftCoreNativeCounters
 public final class TaskQueue {
 	// MARK: + Private scope
 
+	nonisolated(unsafe)
+	static var eventSink: TaskQueueEventSink?
+
 	private static let mainQueue: DispatchQueue = .main
 
 	private static let defaultQueue: DispatchQueue = .init(
@@ -58,7 +61,7 @@ public final class TaskQueue {
 		public let function: String
 
 		@inlinable
-		public init(
+		init(
 			taskId: UInt64 = nextTaskID(),
 			file: StaticString,
 			line: UInt,
@@ -96,9 +99,6 @@ public final class TaskQueue {
 	}
 
 	public typealias TaskQueueEventSink = @Sendable (TaskQueueEvent) -> Void
-
-	nonisolated(unsafe)
-	public static private(set) var eventSink: TaskQueueEventSink?
 
 	public static let main: SerialTaskQueue = .init(
 		mainQueue,
