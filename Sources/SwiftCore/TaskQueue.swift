@@ -148,12 +148,17 @@ public struct SerialTaskQueue: Sendable {
 
 	// MARK: + Public scope
 
+	public typealias SyncResult<T> = (
+		value: T,
+		info: TaskQueue.TaskInfo
+	)
+
 	public func sync<T>(
 		_ task: (TaskQueue.TaskInfo) throws -> T,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) rethrows -> (T, TaskQueue.TaskInfo) {
+	) rethrows -> SyncResult<T> {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -263,12 +268,17 @@ public struct ConcurrentTaskQueue: Sendable {
 
 	// MARK: + Public scope
 
+	public typealias SyncResult<T> = (
+		value: T,
+		info: TaskQueue.TaskInfo
+	)
+
 	public func sync<T>(
 		_ task: (TaskQueue.TaskInfo) throws -> T,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) rethrows -> (T, TaskQueue.TaskInfo) {
+	) rethrows -> SyncResult<T> {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -363,7 +373,7 @@ public struct ConcurrentTaskQueue: Sendable {
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) rethrows -> (T, TaskQueue.TaskInfo) {
+	) rethrows -> SyncResult<T> {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
