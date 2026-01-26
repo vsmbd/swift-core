@@ -150,7 +150,7 @@ public struct SerialTaskQueue: Sendable {
 
 	public typealias SyncResult<T> = (
 		value: T,
-		info: TaskQueue.TaskInfo
+		taskInfo: TaskQueue.TaskInfo
 	)
 
 	public func sync<T>(
@@ -270,7 +270,7 @@ public struct ConcurrentTaskQueue: Sendable {
 
 	public typealias SyncResult<T> = (
 		value: T,
-		info: TaskQueue.TaskInfo
+		taskInfo: TaskQueue.TaskInfo
 	)
 
 	public func sync<T>(
