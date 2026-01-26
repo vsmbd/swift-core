@@ -19,11 +19,13 @@ public final class TaskQueue {
 	private static let mainQueue: DispatchQueue = .main
 
 	private static let defaultQueue: DispatchQueue = .init(
-		label: "swift-core.TaskQueue.default"
+		label: "swift-core.TaskQueue.default",
+		qos: .default
 	)
 
 	private static let backgroundQueue: DispatchQueue = .init(
 		label: "swift-core.TaskQueue.background",
+		qos: .background,
 		attributes: .concurrent
 	)
 
