@@ -145,11 +145,11 @@ public struct SerialTaskQueue: Sendable {
 	// MARK: + Public scope
 
 	public func sync<T>(
-		_ task: () throws -> T,
+		_ task: (TaskQueue.TaskInfo) throws -> T,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) rethrows -> T {
+	) rethrows -> (T, TaskQueue.TaskInfo) {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -165,7 +165,7 @@ public struct SerialTaskQueue: Sendable {
 			)
 		)
 
-		return try queue.sync(execute: {
+		let result = try queue.sync(execute: {
 			TaskQueue.eventSink?(
 				.init(
 					queueName: name,
@@ -186,16 +186,19 @@ public struct SerialTaskQueue: Sendable {
 				)
 			}
 
-			return try task()
+			return try task(taskInfo)
 		})
+
+		return (result, taskInfo)
 	}
 
+	@discardableResult
 	public func async(
-		_ task: @Sendable @escaping () -> Void,
+		_ task: @Sendable @escaping (TaskQueue.TaskInfo) -> Void,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) {
+	) -> TaskQueue.TaskInfo {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -221,7 +224,7 @@ public struct SerialTaskQueue: Sendable {
 				)
 			)
 
-			task()
+			task(taskInfo)
 
 			TaskQueue.eventSink?(
 				.init(
@@ -232,6 +235,8 @@ public struct SerialTaskQueue: Sendable {
 				)
 			)
 		})
+
+		return taskInfo
 	}
 }
 
@@ -252,14 +257,14 @@ public struct ConcurrentTaskQueue: Sendable {
 		self.name = name
 	}
 
-	// MARK: + Public scope¯
+	// MARK: + Public scope
 
 	public func sync<T>(
-		_ task: () throws -> T,
+		_ task: (TaskQueue.TaskInfo) throws -> T,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) rethrows -> T {
+	) rethrows -> (T, TaskQueue.TaskInfo) {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -275,7 +280,7 @@ public struct ConcurrentTaskQueue: Sendable {
 			)
 		)
 
-		return try queue.sync(execute: {
+		let result = try queue.sync(execute: {
 			TaskQueue.eventSink?(
 				.init(
 					queueName: name,
@@ -296,16 +301,19 @@ public struct ConcurrentTaskQueue: Sendable {
 				)
 			}
 
-			return try task()
+			return try task(taskInfo)
 		})
+
+		return (result, taskInfo)
 	}
 
+	@discardableResult
 	public func async(
-		_ task: @Sendable @escaping () -> Void,
+		_ task: @Sendable @escaping (TaskQueue.TaskInfo) -> Void,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) {
+	) -> TaskQueue.TaskInfo {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -331,7 +339,7 @@ public struct ConcurrentTaskQueue: Sendable {
 				)
 			)
 
-			task()
+			task(taskInfo)
 
 			TaskQueue.eventSink?(
 				.init(
@@ -342,14 +350,16 @@ public struct ConcurrentTaskQueue: Sendable {
 				)
 			)
 		})
+
+		return taskInfo
 	}
 
 	public func syncBarrier<T>(
-		_ task: () throws -> T,
+		_ task: (TaskQueue.TaskInfo) throws -> T,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) rethrows -> T {
+	) rethrows -> (T, TaskQueue.TaskInfo) {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -365,7 +375,7 @@ public struct ConcurrentTaskQueue: Sendable {
 			)
 		)
 
-		return try queue.sync(
+		let result = try queue.sync(
 			flags: .barrier,
 			execute: {
 				TaskQueue.eventSink?(
@@ -388,17 +398,20 @@ public struct ConcurrentTaskQueue: Sendable {
 					)
 				}
 
-				return try task()
+				return try task(taskInfo)
 			}
 		)
+
+		return (result, taskInfo)
 	}
 
+	@discardableResult
 	public func asyncBarrier(
-		_ task: @escaping @Sendable () -> Void,
+		_ task: @escaping @Sendable (TaskQueue.TaskInfo) -> Void,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
-	) {
+	) -> TaskQueue.TaskInfo {
 		let taskInfo = TaskQueue.TaskInfo(
 			file: file,
 			line: line,
@@ -426,7 +439,7 @@ public struct ConcurrentTaskQueue: Sendable {
 					)
 				)
 
-				task()
+				task(taskInfo)
 
 				TaskQueue.eventSink?(
 					.init(
@@ -438,5 +451,7 @@ public struct ConcurrentTaskQueue: Sendable {
 				)
 			}
 		)
+
+		return taskInfo
 	}
 }
