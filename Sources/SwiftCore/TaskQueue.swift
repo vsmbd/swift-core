@@ -62,12 +62,11 @@ public final class TaskQueue {
 
 		@inlinable
 		init(
-			taskId: UInt64 = nextTaskID(),
 			file: StaticString,
 			line: UInt,
 			function: StaticString
 		) {
-			self.taskId = taskId
+			self.taskId = nextTaskID()
 			self.file = String(describing: file)
 			self.line = line
 			self.function = String(describing: function)
