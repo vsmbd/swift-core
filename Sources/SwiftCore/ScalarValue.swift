@@ -9,8 +9,9 @@ import Foundation
 
 // MARK: - ScalarValue
 
-/// Scalar-only value type for structured data.
-/// Limited to scalar types to preserve Codable and Sendable compliance.
+/// A type-erased scalar value for structured data (e.g. event extra, attributes).
+/// Limited to scalar cases so that it remains `Codable`, `Sendable`, and `Hashable`. Use for key-value bags where keys are strings and values are one of the supported scalar types.
+/// When decoding, the container must contain exactly one of the scalar keys; decoding fails if zero or multiple keys are present.
 @frozen
 public enum ScalarValue: Equatable,
 						 Codable,

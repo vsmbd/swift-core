@@ -7,11 +7,14 @@
 
 import NativeTime
 
+/// A monotonic timestamp in nanoseconds. Increases over time and is not affected by system clock changes (e.g. NTP, sleep). Use for measuring elapsed time and ordering events within a process.
+/// Origin is platform-defined (e.g. boot); do not use as wall time. Encodes/decodes as a nested structure with key `"timestamp"` and inner key `"monotonic_nanos"`.
 @frozen
 public struct MonotonicNanostamp: Equatable,
 								  Comparable,
 								  Hashable,
 								  Sendable {
+	/// Nanoseconds since the monotonic clock origin (e.g. boot).
 	public let nanoseconds: UInt64
 
 	@inlinable
@@ -19,6 +22,7 @@ public struct MonotonicNanostamp: Equatable,
 		self.nanoseconds = nanoseconds
 	}
 
+	/// The current monotonic time (nanoseconds). Safe to call from any thread.
 	@inlinable
 	public static var now: Self {
 		.init(nanoseconds: monotonicNanos())

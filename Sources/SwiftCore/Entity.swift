@@ -9,138 +9,37 @@ import SwiftCoreNativeCounters
 
 // MARK: - Entity
 
+/// A unique identifier for a runtime entity (e.g. a type instance or type itself).
+/// Used for correlation and traceability across checkpoints and events.
+/// For reference types this is derived from the object pointer; for value types it is typically assigned once at creation via `Entity.nextID`.
 public typealias EntityID = UInt64
 
+/// A runtime entity that has a type name and a stable identifier for correlation.
+/// Conform to this protocol to represent types that can be checkpointed and traced through code flow.
+/// - **Reference types (classes):** Get a default `identifier` from the object pointer (stable per instance, process-local).
+/// - **Value types (structs):** Must implement `identifier` yourself; typically store a value from `Self.nextID` at creation.
 public protocol Entity: Sendable {
+	/// The name of the type (e.g. for logging and correlation). Default implementation returns `String(describing: type(of: Self.self))`.
 	var typeName: String { get }
+	/// A stable identifier for this entity within the process. Used to correlate checkpoints and events.
 	var identifier: EntityID { get }
 }
 
 public extension Entity {
+	/// The type name of the conforming type, suitable for diagnostics and correlation keys.
 	var typeName: String {
 		String(describing: type(of: Self.self))
 	}
 
+	/// Returns a fresh entity id from the process-wide counter. Use once when creating a value-type entity (e.g. in `init`) and store the result in `identifier`; do not use as a stable “my id” without storing.
 	static var nextID: EntityID {
 		nextEntityID()
 	}
 }
 
 public extension Entity where Self: AnyObject {
+	/// The object’s identity as an `EntityID` (pointer-derived). Stable for the lifetime of the instance; not stable across process restarts (ASLR).
 	var identifier: EntityID {
 		UInt64(UInt(bitPattern: ObjectIdentifier(self)))
-	}
-}
-
-// MARK: - Checkpoint
-
-public struct Checkpoint: Sendable {
-	// MARK: + Private scope
-
-	private init(
-		typeName: String,
-		entityId: EntityID,
-		file: StaticString,
-		line: UInt,
-		function: StaticString
-	) {
-		self.typeName = typeName
-		self.entityId = entityId
-		self.file = file
-		self.line = line
-		self.function = function
-	}
-
-	// MARK: + Public scope
-
-	public let typeName: String
-	public let entityId: EntityID
-	public let file: StaticString
-	public let line: UInt
-	public let function: StaticString
-
-	public static func at(
-		_ entity: Entity,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
-	) -> Checkpoint {
-		.init(
-			typeName: entity.typeName,
-			entityId: entity.identifier,
-			file: file,
-			line: line,
-			function: function
-		)
-	}
-}
-
-// MARK: - Checkpoint + Equatable
-
-extension Checkpoint: Equatable {
-	public static func == (
-		lhs: Checkpoint,
-		rhs: Checkpoint
-	) -> Bool {
-		lhs.typeName == rhs.typeName
-		&& lhs.entityId == rhs.entityId
-		&& String(describing: lhs.file) == String(describing: rhs.file)
-		&& lhs.line == rhs.line
-		&& String(describing: lhs.function) == String(describing: rhs.function)
-	}
-}
-
-// MARK: - Checkpoint + Hashable
-
-extension Checkpoint: Hashable {
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(typeName)
-		hasher.combine(entityId)
-		hasher.combine(String(describing: file))
-		hasher.combine(line)
-		hasher.combine(String(describing: function))
-	}
-}
-
-// MARK: - Checkpoint + Encodable
-
-extension Checkpoint: Encodable {
-	// MARK: + Private scope
-
-	private enum CodingKeys: String,
-							 CodingKey {
-		case typeName
-		case entityId
-		case file
-		case line
-		case function
-	}
-
-	// MARK: + Public scope
-
-	public func encode(to encoder: Encoder) throws {
-		var container = encoder
-			.container(keyedBy: CodingKeys.self)
-
-		try container.encode(
-			typeName,
-			forKey: .typeName
-		)
-		try container.encode(
-			entityId,
-			forKey: .entityId
-		)
-		try container.encode(
-			String(describing: file),
-			forKey: .file
-		)
-		try container.encode(
-			line,
-			forKey: .line
-		)
-		try container.encode(
-			String(describing: function),
-			forKey: .function
-		)
 	}
 }
