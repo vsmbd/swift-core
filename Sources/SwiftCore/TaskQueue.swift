@@ -15,7 +15,7 @@ public final class TaskQueue {
 	// MARK: + Private scope
 
 	nonisolated(unsafe)
-	fileprivate static var eventSink: TaskQueueEventSink?
+	fileprivate static var eventSink: EventSink?
 
 	private static let mainQueue: DispatchQueue = .main
 
@@ -113,7 +113,7 @@ public final class TaskQueue {
 	}
 
 	/// Closure type for the task queue event sink. Receives `TaskQueueEvent` for every created/started/completed transition; must be thread-safe.
-	public typealias TaskQueueEventSink = @Sendable (TaskQueueEvent) -> Void
+	public typealias EventSink = @Sendable (TaskQueueEvent) -> Void
 
 	/// The main (serial) queue. Use for UI or main-thread work.
 	public static let main: SerialTaskQueue = .init(
@@ -134,7 +134,7 @@ public final class TaskQueue {
 	)
 
 	/// Registers the global task queue event sink. Call once at startup; subsequent calls are ignored. The sink receives events for every task created/started/completed.
-	public static func setEventSink(_ sink: @escaping TaskQueueEventSink) {
+	public static func setEventSink(_ sink: @escaping EventSink) {
 		guard eventSink == nil else {
 			return
 		}
