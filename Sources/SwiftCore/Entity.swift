@@ -19,7 +19,7 @@ public typealias EntityID = UInt64
 /// - **Reference types (classes):** Get a default `identifier` from the object pointer (stable per instance, process-local).
 /// - **Value types (structs):** Must implement `identifier` yourself; typically store a value from `Self.nextID` at creation.
 public protocol Entity: Sendable {
-	/// The name of the type (e.g. for logging and correlation). Default implementation returns `String(describing: type(of: Self.self))`.
+	/// The name of the type (e.g. for logging and correlation). Default implementation returns `String(describing: type(of: self))`.
 	var typeName: String { get }
 	/// A stable identifier for this entity within the process. Used to correlate checkpoints and events.
 	var identifier: EntityID { get }
@@ -28,7 +28,7 @@ public protocol Entity: Sendable {
 public extension Entity {
 	/// The type name of the conforming type, suitable for diagnostics and correlation keys.
 	var typeName: String {
-		String(describing: type(of: Self.self))
+		String(describing: type(of: self))
 	}
 
 	/// Returns a fresh entity id from the process-wide counter. Use once when creating a value-type entity (e.g. in `init`) and store the result in `identifier`; do not use as a stable “my id” without storing.
