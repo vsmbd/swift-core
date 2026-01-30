@@ -13,7 +13,10 @@ public enum CheckpointEvent: Sendable {
 	/// A checkpoint was created via `Checkpoint.at(_:file:line:function:)`. The associated value is the new checkpoint.
 	case created(Checkpoint)
 	/// A checkpoint-to-checkpoint correlation was recorded via `Checkpoint.next(_:file:line:function:)`. The edge is from the calling checkpoint to the returned one.
-	case correlated(from: Checkpoint, to: Checkpoint)
+	case correlated(
+		from: Checkpoint,
+		to: Checkpoint
+	)
 }
 
 // MARK: - Checkpoint
