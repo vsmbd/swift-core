@@ -56,31 +56,23 @@ public final class TaskQueue {
 
 	public struct TaskInfo: Sendable,
 							Hashable,
-							Codable {
+							Encodable {
 		public enum Key {
 			public static let taskId = "task_id"
 		}
 
 		public let taskId: UInt64
-		public let file: String
-		public let line: UInt
-		public let function: String
+		public let checkpoint: Checkpoint
 
 		@inlinable
-		init(
-			file: StaticString,
-			line: UInt,
-			function: StaticString
-		) {
+		init(_ checkpoint: Checkpoint) {
 			self.taskId = nextTaskID()
-			self.file = String(describing: file)
-			self.line = line
-			self.function = String(describing: function)
+			self.checkpoint = checkpoint
 		}
 	}
 
 	public struct TaskQueueEvent: Sendable,
-								  Codable,
+								  Encodable,
 								  Hashable {
 		public let queueName: String
 		public let taskInfo: TaskInfo
@@ -154,16 +146,10 @@ public struct SerialTaskQueue: Sendable {
 	)
 
 	public func sync<T>(
-		_ task: (TaskQueue.TaskInfo) throws -> T,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
+		_ checkpoint: Checkpoint,
+		_ task: (TaskQueue.TaskInfo) throws -> T
 	) rethrows -> SyncResult<T> {
-		let taskInfo = TaskQueue.TaskInfo(
-			file: file,
-			line: line,
-			function: function
-		)
+		let taskInfo = TaskQueue.TaskInfo(checkpoint)
 
 		TaskQueue.eventSink?(
 			.init(
@@ -203,16 +189,10 @@ public struct SerialTaskQueue: Sendable {
 
 	@discardableResult
 	public func async(
-		_ task: @Sendable @escaping (TaskQueue.TaskInfo) -> Void,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
+		_ checkpoint: Checkpoint,
+		_ task: @Sendable @escaping (TaskQueue.TaskInfo) -> Void
 	) -> TaskQueue.TaskInfo {
-		let taskInfo = TaskQueue.TaskInfo(
-			file: file,
-			line: line,
-			function: function
-		)
+		let taskInfo = TaskQueue.TaskInfo(checkpoint)
 
 		TaskQueue.eventSink?(
 			.init(
@@ -274,16 +254,10 @@ public struct ConcurrentTaskQueue: Sendable {
 	)
 
 	public func sync<T>(
-		_ task: (TaskQueue.TaskInfo) throws -> T,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
+		_ checkpoint: Checkpoint,
+		_ task: (TaskQueue.TaskInfo) throws -> T
 	) rethrows -> SyncResult<T> {
-		let taskInfo = TaskQueue.TaskInfo(
-			file: file,
-			line: line,
-			function: function
-		)
+		let taskInfo = TaskQueue.TaskInfo(checkpoint)
 
 		TaskQueue.eventSink?(
 			.init(
@@ -323,16 +297,10 @@ public struct ConcurrentTaskQueue: Sendable {
 
 	@discardableResult
 	public func async(
-		_ task: @Sendable @escaping (TaskQueue.TaskInfo) -> Void,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
+		_ checkpoint: Checkpoint,
+		_ task: @Sendable @escaping (TaskQueue.TaskInfo) -> Void
 	) -> TaskQueue.TaskInfo {
-		let taskInfo = TaskQueue.TaskInfo(
-			file: file,
-			line: line,
-			function: function
-		)
+		let taskInfo = TaskQueue.TaskInfo(checkpoint)
 
 		TaskQueue.eventSink?(
 			.init(
@@ -369,16 +337,10 @@ public struct ConcurrentTaskQueue: Sendable {
 	}
 
 	public func syncBarrier<T>(
-		_ task: (TaskQueue.TaskInfo) throws -> T,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
+		_ checkpoint: Checkpoint,
+		_ task: (TaskQueue.TaskInfo) throws -> T
 	) rethrows -> SyncResult<T> {
-		let taskInfo = TaskQueue.TaskInfo(
-			file: file,
-			line: line,
-			function: function
-		)
+		let taskInfo = TaskQueue.TaskInfo(checkpoint)
 
 		TaskQueue.eventSink?(
 			.init(
@@ -421,16 +383,10 @@ public struct ConcurrentTaskQueue: Sendable {
 
 	@discardableResult
 	public func asyncBarrier(
-		_ task: @escaping @Sendable (TaskQueue.TaskInfo) -> Void,
-		file: StaticString = #fileID,
-		line: UInt = #line,
-		function: StaticString = #function
+		_ checkpoint: Checkpoint,
+		_ task: @escaping @Sendable (TaskQueue.TaskInfo) -> Void
 	) -> TaskQueue.TaskInfo {
-		let taskInfo = TaskQueue.TaskInfo(
-			file: file,
-			line: line,
-			function: function
-		)
+		let taskInfo = TaskQueue.TaskInfo(checkpoint)
 
 		TaskQueue.eventSink?(
 			.init(

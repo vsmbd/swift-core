@@ -18,6 +18,10 @@ extern "C" {
 /// Thread-safe on supported platforms/toolchains.
 uint64_t nextTaskID(void);
 
+/// Returns a monotonically increasing entity id (starting from 1).
+/// Thread-safe on supported platforms/toolchains.
+uint64_t nextEntityID(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -10,6 +10,21 @@ import Foundation
 import Testing
 import SwiftCore
 
+private struct TestEntity: Entity {
+	let identifier: EntityID
+
+	init() {
+		self.identifier = Self.nextID
+	}
+}
+
+private let testCheckpoint = Checkpoint.at(
+	TestEntity(),
+	file: #fileID,
+	line: #line,
+	function: #function
+)
+
 @Suite("TaskQueue")
 struct TaskQueueTests {
 	@Test
@@ -20,7 +35,7 @@ struct TaskQueueTests {
 
 		for value in 0..<5 {
 			group.enter()
-			queue.async { _ in
+			queue.async(testCheckpoint) { _ in
 				events.append(value)
 				group.leave()
 			}
@@ -46,21 +61,21 @@ struct TaskQueueTests {
 
 		for index in 0..<5 {
 			group.enter()
-			queue.async { _ in
+			queue.async(testCheckpoint) { _ in
 				record("pre\(index)")
 				group.leave()
 			}
 		}
 
 		group.enter()
-		queue.asyncBarrier { _ in
+		queue.asyncBarrier(testCheckpoint) { _ in
 			record("barrier")
 			group.leave()
 		}
 
 		for index in 0..<5 {
 			group.enter()
-			queue.async { _ in
+			queue.async(testCheckpoint) { _ in
 				record("post\(index)")
 				group.leave()
 			}
