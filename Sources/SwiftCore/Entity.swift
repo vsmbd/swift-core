@@ -9,11 +9,6 @@ import SwiftCoreNativeCounters
 
 // MARK: - Entity
 
-/// A unique identifier for a runtime entity (e.g. a type instance or type itself).
-/// Used for correlation and traceability across checkpoints and events.
-/// For reference types this is derived from the object pointer; for value types it is typically assigned once at creation via `Entity.nextID`.
-public typealias EntityID = UInt64
-
 /// A runtime entity that has a type name and a stable identifier for correlation.
 /// Conform to this protocol to represent types that can be checkpointed and traced through code flow.
 /// - **Reference types (classes):** Get a default `identifier` from the object pointer (stable per instance, process-local).
@@ -22,7 +17,7 @@ public protocol Entity: Sendable {
 	/// The name of the type (e.g. for logging and correlation). Default implementation returns `String(describing: type(of: self))`.
 	var typeName: String { get }
 	/// A stable identifier for this entity within the process. Used to correlate checkpoints and events.
-	var identifier: EntityID { get }
+	var identifier: UInt64 { get }
 }
 
 public extension Entity {
@@ -32,14 +27,14 @@ public extension Entity {
 	}
 
 	/// Returns a fresh entity id from the process-wide counter. Use once when creating a value-type entity (e.g. in `init`) and store the result in `identifier`; do not use as a stable “my id” without storing.
-	static var nextID: EntityID {
+	static var nextID: UInt64 {
 		nextEntityID()
 	}
 }
 
 public extension Entity where Self: AnyObject {
-	/// The object’s identity as an `EntityID` (pointer-derived). Stable for the lifetime of the instance; not stable across process restarts (ASLR).
-	var identifier: EntityID {
+	/// The object’s identity as an `UInt64` (pointer-derived). Stable for the lifetime of the instance; not stable across process restarts (ASLR).
+	var identifier: UInt64 {
 		UInt64(UInt(bitPattern: ObjectIdentifier(self)))
 	}
 }

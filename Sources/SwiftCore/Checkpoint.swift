@@ -31,7 +31,7 @@ public struct Checkpoint: Sendable {
 
 	private init(
 		typeName: String,
-		entityId: EntityID,
+		entityId: UInt64,
 		file: StaticString,
 		line: UInt,
 		function: StaticString
@@ -50,7 +50,7 @@ public struct Checkpoint: Sendable {
 	/// The type name of the entity at this checkpoint.
 	public let typeName: String
 	/// The entity identifier at this checkpoint.
-	public let entityId: EntityID
+	public let entityId: UInt64
 	/// The file (e.g. module/file path) where the checkpoint was captured. Defaults to `#fileID`.
 	public let file: StaticString
 	/// The line number where the checkpoint was captured. Defaults to `#line`.

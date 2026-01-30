@@ -11,7 +11,7 @@ import Testing
 import SwiftCore
 
 private struct TestEntity: Entity {
-	let identifier: EntityID
+	let identifier: UInt64
 
 	init() {
 		self.identifier = Self.nextID
