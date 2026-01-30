@@ -9,7 +9,8 @@
 
 /// Event emitted to the checkpoint sink when checkpoints are created or correlated.
 /// Set a sink with `Checkpoint.setEventSink(_:)`; the sink is responsible for thread-safe ingestion (e.g. graph storage, export).
-public enum CheckpointEvent: Sendable {
+public enum CheckpointEvent: Sendable,
+							 Encodable {
 	/// A checkpoint was created via `Checkpoint.at(_:file:line:function:)`. The associated value is the new checkpoint.
 	case created(Checkpoint)
 	/// A checkpoint-to-checkpoint correlation was recorded via `Checkpoint.next(_:file:line:function:)`. The edge is from the calling checkpoint to the returned one.
