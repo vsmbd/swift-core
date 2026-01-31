@@ -42,8 +42,6 @@ public struct Checkpoint: Sendable {
 		self.file = file
 		self.line = line
 		self.function = function
-
-		Self.eventSink?(.created(self))
 	}
 
 	// MARK: + Public scope
@@ -77,19 +75,23 @@ public struct Checkpoint: Sendable {
 	///   - line: Call site line; defaults to `#line`.
 	///   - function: Call site function; defaults to `#function`.
 	/// - Returns: The new checkpoint.
-	public static func at(
+	public static func checkpoint(
 		_ entity: Entity,
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function
 	) -> Checkpoint {
-		.init(
+		let new = Self(
 			typeName: entity.typeName,
 			entityId: entity.identifier,
 			file: file,
 			line: line,
 			function: function
 		)
+
+		Self.eventSink?(.created(new))
+
+		return new
 	}
 
 	/// Creates a successor checkpoint for the given entity at the current call site and emits `.correlated(from: self, to: next)` to the sink if set.
@@ -106,9 +108,8 @@ public struct Checkpoint: Sendable {
 		line: UInt = #line,
 		function: StaticString = #function
 	) -> Checkpoint {
-		let next = Self(
-			typeName: entity.typeName,
-			entityId: entity.identifier,
+		let next = Self.checkpoint(
+			entity,
 			file: file,
 			line: line,
 			function: function
