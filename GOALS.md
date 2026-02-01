@@ -1,35 +1,22 @@
 # SwiftCore Goals
 
-This document defines what SwiftCore must achieve.
+## Provide foundational primitives
+- Time, identity, execution, and error modeling
+- Shared across all higher-level infrastructure modules
 
-## 1. Foundational primitives only
+## Enforce explicit contracts
+- Strong typing
+- Opt-in error reporting
+- Clear execution semantics
 
-Provide primitives required by multiple higher-level infrastructure modules (time, identity/call-site, execution, structured scalar values).
+## Maintain strict layering
+- No dependency on higher-level systems
+- No policy decisions baked into primitives
 
-## 2. Explicit time measurement
+## Enable observability
+- Correlatable tasks, events, and errors
+- Export-ready representations without assuming a backend
 
-Expose monotonic and wall-clock timestamps with clear, stable semantics (MonotonicNanostamp, WallNanostamp).
-
-## 3. Identity and call-site for correlation
-
-Provide Entity and Checkpoint so higher layers can correlate events and flow without SwiftCore implementing logging or telemetry.
-
-## 4. Explicit execution semantics
-
-Standardize execution contexts through TaskQueue (main, default, background) with observable task lifecycle tied to Checkpoint.
-
-## 5. Deterministic behavior
-
-Prefer serial execution and testability over flexibility.
-
-## 6. Explicit contracts
-
-Favor clarity and constraints over broad abstractions.
-
-## 7. Platform agnostic
-
-No UIKit, AppKit, or platform UI assumptions.
-
-## 8. Small and stable API
-
-Minimize public surface area and avoid frequent breaking changes.
+## Stay minimal
+- Small API surface
+- No convenience abstractions

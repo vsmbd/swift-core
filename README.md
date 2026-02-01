@@ -2,7 +2,8 @@
 
 SwiftCore is a small, platform-agnostic foundation library for Swift packages.
 It provides a minimal set of primitives required to build predictable, testable,
-and well-layered infrastructure libraries such as EventDispatch, Logger, Telme, and UIKitCore.
+and well-layered infrastructure libraries such as EventDispatch, Telme, KVStore,
+FileStore, and UIKitCore.
 
 SwiftCore is intentionally constrained.
 It exists to stabilize the bottom of the dependency graph, not to provide convenience APIs.
@@ -11,73 +12,75 @@ It exists to stabilize the bottom of the dependency graph, not to provide conven
 
 Infrastructure libraries often need a small set of low-level concepts:
 
-- **Time:** Monotonic time for latency and duration; wall clock for logging and correlation.
-- **Identity and call-site:** Entity identity and checkpoints (entity + file/line/function) for correlating events and flow.
-- **Execution:** A constrained execution model (serial main/default, concurrent background) with observable task lifecycle.
+- Time: Monotonic time for latency and duration; wall clock time for correlation.
+- Identity and call-site: Entity identity and checkpoints (entity + file/line/function).
+- Execution: A constrained execution model with observable task lifecycle.
+- Errors: Structured, explicitly reportable errors tied to checkpoints.
 
-SwiftCore provides these primitives once, with explicit contracts, so higher layers can stay focused and coherent.
+SwiftCore provides these primitives once, with explicit contracts,
+so higher layers can stay focused and coherent.
 
 ## Design principles
 
 - Small surface area
 - Explicit over clever
-- Deterministic by default (serial queues, stable ordering)
+- Deterministic by default
 - Strict layering
 
 ## What SwiftCore contains
 
-### Time (Measure, re-exported by SwiftCore)
+### Time (Measure)
 
-Value types for timestamp-based measurements:
+- MonotonicNanostamp — Monotonic nanoseconds for ordering and elapsed time.
+- WallNanostamp — Wall clock nanoseconds since Unix epoch.
 
-- **MonotonicNanostamp** — Monotonic nanoseconds (e.g. boot origin). Use for elapsed time and ordering; not affected by clock changes.
-- **WallNanostamp** — Wall clock nanoseconds since Unix epoch. Use for human-readable time and cross-process ordering when clocks are synchronized.
-
-Backed by a minimal C layer (`NativeTime`) for platform-specific time sources.
+Backed by a minimal C layer (NativeTime) for platform-specific implementations.
 
 ### Entity
 
-Protocol for runtime identity used in checkpoints and correlation:
-
-- **Entity** — `typeName` and `identifier`. Reference types get a default identifier from `ObjectIdentifier`; value types use `Self.nextID` and store it.
-- Conform to use types as subjects of checkpoints and task/event correlation.
+- Entity — Runtime identity consisting of typeName and identifier.
+- Reference types derive identifiers from ObjectIdentifier.
+- Value types must assign and store an identifier explicitly.
 
 ### Checkpoint
 
-Call-site and entity identity for flow and correlation:
+- Checkpoint — Entity identity plus call-site information (file, line, function).
+- Used to model control-flow and causal relationships.
+- Create with `Checkpoint.checkpoint(_:file:line:function:)`; use `next(_:file:line:function:)` to record a successor and emit a correlation event.
+- Emits created and correlated events to a global sink when set via `Checkpoint.setEventSink(_:)`.
 
-- **Checkpoint** — Entity identity plus `file`, `line`, `function` at capture.
-- **Checkpoint.checkpoint(_:file:line:function:)** — Create a checkpoint for an entity at the current call site; emits `.created(checkpoint)` to the sink if set.
-- **Checkpoint.next(_:file:line:function:)** — Create a successor checkpoint and emit `.correlated(from:to:)` to the sink if set.
-- **Checkpoint.setEventSink(_:)** — Register a global sink for `.created` and `.correlated` events (e.g. graph storage, export). Call once at startup.
+### ErrorEntity and ErrorInfo (planned)
+
+Structured error representation for observability and correlation is planned:
+
+- ErrorEntity — A constrained protocol for errors that are safe to export (Error, Sendable, Encodable); only explicitly adopting errors participate in structured reporting.
+- ErrorInfo — An envelope tying an ErrorEntity to a Checkpoint, with optional scalar metadata.
+
+SwiftCore does not capture or serialize arbitrary Error values. Higher layers may wrap system errors into domain-specific types that opt into reporting.
 
 ### TaskQueue
 
-Constrained execution abstraction with observable task lifecycle:
+- main — Serial queue (main thread).
+- default — Serial queue for deterministic background work.
+- background — Concurrent queue for long-running or parallel work.
 
-- **main** — Serial queue (main thread).
-- **default** — Serial queue (deterministic FIFO).
-- **background** — Concurrent queue.
-
-Each task is tied to a **Checkpoint**. Optional **TaskQueue.setEventSink(_:)** receives created/started/completed events (queue name, task id, checkpoint, dispatch type, monotonic timestamp).
+Each task is associated with a Checkpoint.
+Lifecycle events may be emitted to a global sink when set via `TaskQueue.setEventSink(_:)`.
 
 ### ScalarValue
 
-Type-erased scalar value for structured data (e.g. event attributes, extra fields):
-
-- Cases: `string`, `bool`, `int64`, `uint64`, `double`, `float`.
-- **Codable**, **Sendable**, **Hashable**. Use in key-value bags where values must be one of these types.
+- A constrained scalar value type for structured metadata.
+- Supports string, bool, int64, uint64, double, and float.
+- Codable, Sendable, and Hashable.
 
 ## What SwiftCore does not contain
 
-No logging, telemetry export, networking, persistence, UI utilities, or general helpers.
-No locks, atomics, or other synchronization primitives (beyond the queue abstraction).
+- Logging or telemetry exporters
+- Networking or persistence
+- UI utilities
+- General-purpose helpers
 
 ## Stability
 
 SwiftCore is a foundational dependency.
 Public APIs are expected to remain stable with rare breaking changes.
-
-## License
-
-MIT or Apache-2.0
