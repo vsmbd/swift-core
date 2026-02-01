@@ -22,6 +22,10 @@ uint64_t nextTaskID(void);
 /// Thread-safe on supported platforms/toolchains.
 uint64_t nextEntityID(void);
 
+/// Returns a monotonically increasing error id (starting from 1).
+/// Thread-safe on supported platforms/toolchains.
+uint64_t nextErrorID(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
