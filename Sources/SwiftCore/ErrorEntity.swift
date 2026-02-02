@@ -96,3 +96,11 @@ public struct ErrorInfo<E: ErrorEntity>: Sendable,
 		)
 	}
 }
+
+// MARK: - ErrorInfoKey
+
+/// Public key constants for use with `ErrorInfo` (e.g. in `extras` or structured payloads).
+public enum ErrorInfoKey {
+	/// Key for an underlying cause or error.
+	public static let underlying = "underlying"
+}
