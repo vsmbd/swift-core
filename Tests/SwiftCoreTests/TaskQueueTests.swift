@@ -18,7 +18,7 @@ private struct TestEntity: Entity {
 	}
 }
 
-private let testCheckpoint = Checkpoint.at(
+private let testCheckpoint = Checkpoint.checkpoint(
 	TestEntity(),
 	file: #fileID,
 	line: #line,
