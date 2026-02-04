@@ -16,6 +16,16 @@ uint64_t monotonicNanos(void);
 // Returns 0 on failure.
 uint64_t wallNanos(void);
 
+// Captures wall and monotonic time in one call so both refer to the same instant.
+// Fills out->wallNanos and out->monotonicNanos with minimal delay between samples
+// (wall captured first, then monotonic). Use for session baselines.
+typedef struct {
+	uint64_t wallNanos;
+	uint64_t monotonicNanos;
+} NativeTimeBaseline;
+
+void nativeTimeBaseline(NativeTimeBaseline *out);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

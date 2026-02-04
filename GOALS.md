@@ -16,6 +16,7 @@
 ## Enable observability
 - Correlatable tasks, events, and errors
 - Export-ready representations without assuming a backend
+- Time baseline (wall + monotonic) for converting event timestamps to wall time
 
 ## Stay minimal
 - Small API surface

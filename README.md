@@ -31,32 +31,36 @@ so higher layers can stay focused and coherent.
 
 ### Time (Measure)
 
-- MonotonicNanostamp — Monotonic nanoseconds for ordering and elapsed time.
-- WallNanostamp — Wall clock nanoseconds since Unix epoch.
+- MonotonicNanostamp — Monotonic nanoseconds for ordering and elapsed time. Encodes as `"monotonic_nanos"`.
+- WallNanostamp — Wall clock nanoseconds since Unix epoch. Encodes as `"wall_nanos"`.
+- TimeBaseline — Wall and monotonic pair captured together for session baselines. Use `timeBaseline.wallNanostamp(for: monotonicStamp)` to convert event monotonic time to wall time; or use the formula `baseline.wall.unixEpochNanoseconds + (event_mono - baseline.monotonic.nanoseconds)`.
+- timeBaseline — Process-wide baseline (captured at first access). Safe to read from any thread.
 
 Backed by a minimal C layer (NativeTime) for platform-specific implementations.
 
 ### Entity
 
 - Entity — Runtime identity consisting of typeName and identifier.
-- Reference types derive identifiers from ObjectIdentifier.
-- Value types must assign and store an identifier explicitly.
+- Reference types get a default identifier from ObjectIdentifier (stable per instance).
+- Value types must implement identifier; use `Entity.nextID` at creation and store the result.
 
 ### Checkpoint
 
 - Checkpoint — Entity identity plus call-site information (file, line, function).
 - Used to model control-flow and causal relationships.
-- Create with `Checkpoint.checkpoint(_:file:line:function:)`; use `next(_:file:line:function:)` to record a successor and emit a correlation event.
+- Create with `Checkpoint.checkpoint(_:file:line:function:)` (pass an Entity); use `next(_:file:line:function:)` to record a successor and emit a correlation event.
 - Emits created and correlated events to a global sink when set via `Checkpoint.setEventSink(_:)`.
 
-### ErrorEntity and ErrorInfo (planned)
+### ErrorEntity and ErrorInfo
 
-Structured error representation for observability and correlation is planned:
+- ErrorEntity — A protocol for errors that are safe to export (Error, Sendable, Encodable). Only explicitly adopting errors participate in structured reporting.
+- ErrorInfo — An envelope tying an ErrorEntity to a Checkpoint, with timestamp (MonotonicNanostamp), errorId, and optional scalar extras. Used for observability and correlation.
 
-- ErrorEntity — A constrained protocol for errors that are safe to export (Error, Sendable, Encodable); only explicitly adopting errors participate in structured reporting.
-- ErrorInfo — An envelope tying an ErrorEntity to a Checkpoint, with optional scalar metadata.
+SwiftCore does not capture or serialize arbitrary Error values. Higher layers may wrap system errors into domain-specific types that adopt ErrorEntity.
 
-SwiftCore does not capture or serialize arbitrary Error values. Higher layers may wrap system errors into domain-specific types that opt into reporting.
+### CheckpointedResult
+
+- CheckpointedResult&lt;Success, Failure: ErrorEntity&gt; — A result type that carries a checkpoint on both branches: success carries the value and a Checkpoint; failure carries ErrorInfo (error, checkpoint, timestamp, extras). Encodable when Success is Encodable.
 
 ### TaskQueue
 

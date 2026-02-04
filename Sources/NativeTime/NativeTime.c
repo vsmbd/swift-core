@@ -52,6 +52,12 @@ uint64_t wallNanos(void) {
     return 0;
 }
 
+void nativeTimeBaseline(NativeTimeBaseline *out) {
+    if (!out) { return; }
+    out->wallNanos = wallNanos();
+    out->monotonicNanos = monotonicNanos();
+}
+
 #elif defined(__linux__)
 
 // Linux
@@ -82,6 +88,12 @@ uint64_t wallNanos(void) {
     }
 
     return 0;
+}
+
+void nativeTimeBaseline(NativeTimeBaseline *out) {
+    if (!out) { return; }
+    out->wallNanos = wallNanos();
+    out->monotonicNanos = monotonicNanos();
 }
 
 #elif defined(_WIN32)
@@ -174,6 +186,12 @@ uint64_t wallNanos(void) {
 
     // Convert 100ns intervals to nanoseconds
     return unix_epoch_100ns_intervals * 100ULL;
+}
+
+void nativeTimeBaseline(NativeTimeBaseline *out) {
+    if (!out) { return; }
+    out->wallNanos = wallNanos();
+    out->monotonicNanos = monotonicNanos();
 }
 
 #else
