@@ -41,8 +41,7 @@ struct MonotonicNanostampTests {
 		#expect(decoded == stamp)
 
 		let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-		let timestamp = object?["timestamp"] as? [String: Any]
-		let value = timestamp?["monotonic_nanos"] as? NSNumber
+		let value = object?["monotonic_nanos"] as? NSNumber
 
 		#expect(value?.uint64Value == 42)
 	}

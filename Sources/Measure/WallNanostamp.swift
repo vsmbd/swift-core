@@ -8,7 +8,7 @@
 import NativeTime
 
 /// A wall-clock timestamp in nanoseconds since the Unix epoch (1970-01-01 00:00:00 UTC). Use for human-readable time and cross-process ordering when clocks are synchronized.
-/// Subject to system clock adjustments (NTP, manual changes). Encodes/decodes as a nested structure with key `"timestamp"` and inner key `"wall_nanos"`.
+/// Subject to system clock adjustments (NTP, manual changes). Encodes/decodes as a single key `"wall_nanos"`.
 @frozen
 public struct WallNanostamp: Equatable,
 							 Comparable,
@@ -38,45 +38,18 @@ public struct WallNanostamp: Equatable,
 }
 
 extension WallNanostamp: Codable {
-	private enum TopLevelKeys: String,
-							   CodingKey {
-		case timestamp
-	}
-
-	private enum TimestampKeys: String,
-								CodingKey {
+	private enum CodingKeys: String,
+							 CodingKey {
 		case wallNanos = "wall_nanos"
 	}
 
 	public init(from decoder: Decoder) throws {
-		let topLevelContainer = try decoder
-			.container(keyedBy: TopLevelKeys.self)
-		let timestampContainer = try topLevelContainer
-			.nestedContainer(
-				keyedBy: TimestampKeys.self,
-				forKey: .timestamp
-			)
-
-		let decodedNanoseconds = try timestampContainer
-			.decode(
-				UInt64.self,
-				forKey: .wallNanos
-			)
-		self.unixEpochNanoseconds = decodedNanoseconds
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.unixEpochNanoseconds = try container.decode(UInt64.self, forKey: .wallNanos)
 	}
 
 	public func encode(to encoder: Encoder) throws {
-		var topLevelContainer = encoder
-			.container(keyedBy: TopLevelKeys.self)
-		var timestampContainer = topLevelContainer
-			.nestedContainer(
-				keyedBy: TimestampKeys.self,
-				forKey: .timestamp
-			)
-
-		try timestampContainer.encode(
-			unixEpochNanoseconds,
-			forKey: .wallNanos
-		)
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encode(unixEpochNanoseconds, forKey: .wallNanos)
 	}
 }

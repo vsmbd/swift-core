@@ -8,7 +8,7 @@
 import NativeTime
 
 /// A monotonic timestamp in nanoseconds. Increases over time and is not affected by system clock changes (e.g. NTP, sleep). Use for measuring elapsed time and ordering events within a process.
-/// Origin is platform-defined (e.g. boot); do not use as wall time. Encodes/decodes as a nested structure with key `"timestamp"` and inner key `"monotonic_nanos"`.
+/// Origin is platform-defined (e.g. boot); do not use as wall time. Encodes/decodes as a single key `"monotonic_nanos"`.
 @frozen
 public struct MonotonicNanostamp: Equatable,
 								  Comparable,
@@ -38,44 +38,18 @@ public struct MonotonicNanostamp: Equatable,
 }
 
 extension MonotonicNanostamp: Codable {
-	private enum TopLevelKeys: String,
-							   CodingKey {
-		case timestamp
-	}
-
-	private enum TimestampKeys: String,
-								CodingKey {
+	private enum CodingKeys: String,
+							 CodingKey {
 		case monotonicNanos = "monotonic_nanos"
 	}
 
 	public init(from decoder: Decoder) throws {
-		let topLevelContainer = try decoder
-			.container(keyedBy: TopLevelKeys.self)
-		let timestampContainer = try topLevelContainer
-			.nestedContainer(
-				keyedBy: TimestampKeys.self,
-				forKey: .timestamp
-			)
-
-		let decodedNanoseconds = try timestampContainer
-			.decode(
-				UInt64.self,
-				forKey: .monotonicNanos
-			)
-		self.nanoseconds = decodedNanoseconds
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.nanoseconds = try container.decode(UInt64.self, forKey: .monotonicNanos)
 	}
 
 	public func encode(to encoder: Encoder) throws {
-		var topLevelContainer = encoder.container(keyedBy: TopLevelKeys.self)
-		var timestampContainer = topLevelContainer
-			.nestedContainer(
-				keyedBy: TimestampKeys.self,
-				forKey: .timestamp
-			)
-
-		try timestampContainer.encode(
-			nanoseconds,
-			forKey: .monotonicNanos
-		)
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encode(nanoseconds, forKey: .monotonicNanos)
 	}
 }
