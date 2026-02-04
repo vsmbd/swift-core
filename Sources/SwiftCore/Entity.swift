@@ -32,9 +32,52 @@ public extension Entity {
 	}
 }
 
-public extension Entity where Self: AnyObject {
-	/// The object’s identity as an `UInt64` (pointer-derived). Stable for the lifetime of the instance; not stable across process restarts (ASLR).
-	var identifier: UInt64 {
-		UInt64(UInt(bitPattern: ObjectIdentifier(self)))
+public extension Entity {
+	/// Creates a checkpoint for `self` at the call site, runs the given closure inside a `SyncBlock`, then returns.
+	/// - Parameters:
+	///   - file: Call site file; defaults to `#fileID`.
+	///   - line: Call site line; defaults to `#line`.
+	///   - function: Call site function; defaults to `#function`.
+	///   - block: Closure to run (non-escaping).
+	@discardableResult
+	func sync(
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function,
+		block: () -> Void
+	) -> SyncBlock {
+		.init(
+			.checkpoint(
+				self,
+				file: file,
+				line: line,
+				function: function
+			),
+			block: block
+		)
+	}
+
+	/// Creates a checkpoint for `self` at the call site and returns an `AsyncBlock` that runs the given closure when `execute(_:)` is called.
+	/// - Parameters:
+	///   - file: Call site file; defaults to `#fileID`.
+	///   - line: Call site line; defaults to `#line`.
+	///   - function: Call site function; defaults to `#function`.
+	///   - block: Closure to run when the returned block’s `execute(_:)` is called (escaping).
+	/// - Returns: An async block; call `execute(_ checkpoint:)` to run the closure and emit completed.
+	func async(
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function,
+		block: @escaping @Sendable () -> Void
+	) -> AsyncBlock {
+		.init(
+			.checkpoint(
+				self,
+				file: file,
+				line: line,
+				function: function
+			),
+			block: block
+		)
 	}
 }

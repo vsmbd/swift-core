@@ -26,6 +26,10 @@ uint64_t nextEntityID(void);
 /// Thread-safe on supported platforms/toolchains.
 uint64_t nextErrorID(void);
 
+/// Returns a monotonically increasing block id (starting from 1).
+/// Thread-safe on supported platforms/toolchains.
+uint64_t nextBlockID(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
