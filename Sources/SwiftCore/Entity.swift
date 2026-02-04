@@ -33,51 +33,55 @@ public extension Entity {
 }
 
 public extension Entity {
-	/// Creates a checkpoint for `self` at the call site, runs the given closure inside a `SyncBlock`, then returns.
+	/// Creates a checkpoint for `self` at the call site, runs the given closure inside a `MeasuredBlock`, then returns. Does not throw when `block` is non-throwing.
 	/// - Parameters:
 	///   - file: Call site file; defaults to `#fileID`.
 	///   - line: Call site line; defaults to `#line`.
 	///   - function: Call site function; defaults to `#function`.
 	///   - block: Closure to run (non-escaping).
 	@discardableResult
-	func sync(
+	func measured<T>(
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function,
-		block: () -> Void
-	) -> SyncBlock {
-		.init(
-			.checkpoint(
-				self,
-				file: file,
-				line: line,
-				function: function
-			),
+		block: @escaping @Sendable () -> T
+	) -> T {
+		let checkpoint = Checkpoint.checkpoint(
+			self,
+			file: file,
+			line: line,
+			function: function
+		)
+		let syncBlock = MeasuredBlock(
+			checkpoint,
 			block: block
 		)
+		return try! syncBlock.execute(checkpoint)
 	}
 
-	/// Creates a checkpoint for `self` at the call site and returns an `AsyncBlock` that runs the given closure when `execute(_:)` is called.
+	/// Creates a checkpoint for `self` at the call site, runs the given closure inside a `MeasuredBlock`, then returns. Throws when `block` throws.
 	/// - Parameters:
 	///   - file: Call site file; defaults to `#fileID`.
 	///   - line: Call site line; defaults to `#line`.
 	///   - function: Call site function; defaults to `#function`.
-	///   - block: Closure to run when the returned block’s `execute(_:)` is called (escaping).
-	/// - Returns: An async block; call `execute(_ checkpoint:)` to run the closure and emit completed.
-	func async(
+	///   - block: Closure to run (non-escaping); may throw.
+	@discardableResult
+	func measured<T>(
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function,
-		block: @escaping @Sendable () -> Void
-	) -> AsyncBlock {
-		.init(
-			.checkpoint(
-				self,
-				file: file,
-				line: line,
-				function: function
-			),
+		block: @escaping @Sendable () throws -> T
+	) throws -> T {
+		let checkpoint = Checkpoint.checkpoint(
+			self,
+			file: file,
+			line: line,
+			function: function
+		)
+		let syncBlock = MeasuredBlock(
+			checkpoint,
 			block: block
 		)
+		return try syncBlock.execute(checkpoint)
 	}
 }
