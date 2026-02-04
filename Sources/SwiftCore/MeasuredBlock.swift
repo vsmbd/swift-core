@@ -11,7 +11,8 @@ import SwiftCoreNativeCounters
 
 /// Event emitted to the sync block event sink when a sync block is started or completed.
 /// Set a sink with `MeasuredBlock.setEventSink(_:)`; the sink is responsible for thread-safe ingestion.
-public enum MeasuredBlockEvent: Sendable {
+public enum MeasuredBlockEvent: Sendable,
+								Encodable {
 	case created(
 		blockId: UInt64,
 		checkpoint: Checkpoint,
