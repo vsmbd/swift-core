@@ -9,15 +9,64 @@
 
 /// Event emitted to the checkpoint sink when checkpoints are created or correlated.
 /// Set a sink with `Checkpoint.setEventSink(_:)`; the sink is responsible for thread-safe ingestion (e.g. graph storage, export).
-public enum CheckpointEvent: Sendable,
-							 Encodable {
+public enum CheckpointEvent: Sendable {
 	/// A checkpoint was created via `Checkpoint.at(_:file:line:function:)`. The associated value is the new checkpoint.
-	case created(Checkpoint)
+	case created(new: Checkpoint)
 	/// A checkpoint-to-checkpoint correlation was recorded via `Checkpoint.next(_:file:line:function:)`. The edge is from the calling checkpoint to the returned one.
 	case correlated(
 		from: Checkpoint,
 		to: Checkpoint
 	)
+}
+
+extension CheckpointEvent: Encodable {
+	// MARK: + Private scope
+
+	private enum CaseKey: String,
+						  CodingKey {
+		case created = "checkpointevent_created"
+		case correlated = "checkpointevent_correlated"
+	}
+
+	private enum LabelKey: String,
+						   CodingKey {
+		case new
+		case from
+		case to
+	}
+
+	// MARK: + Public scope
+
+	public func encode(to encoder: Encoder) throws {
+		var container = encoder
+			.container(keyedBy: CaseKey.self)
+
+		switch self {
+		case let .created(new):
+			var payload = container.nestedContainer(
+				keyedBy: LabelKey.self,
+				forKey: CaseKey.created
+			)
+			try payload.encode(
+				new,
+				forKey: LabelKey.new
+			)
+
+		case let .correlated(from, to):
+			var payload = container.nestedContainer(
+				keyedBy: LabelKey.self,
+				forKey: CaseKey.correlated
+			)
+			try payload.encode(
+				from,
+				forKey: LabelKey.from
+			)
+			try payload.encode(
+				to,
+				forKey: LabelKey.to
+			)
+		}
+	}
 }
 
 // MARK: - Checkpoint
@@ -89,7 +138,7 @@ public struct Checkpoint: Sendable {
 			function: function
 		)
 
-		Self.eventSink?(.created(new))
+		Self.eventSink?(.created(new: new))
 
 		return new
 	}

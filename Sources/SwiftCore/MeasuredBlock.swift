@@ -11,8 +11,7 @@ import SwiftCoreNativeCounters
 
 /// Event emitted to the sync block event sink when a sync block is started or completed.
 /// Set a sink with `MeasuredBlock.setEventSink(_:)`; the sink is responsible for thread-safe ingestion.
-public enum MeasuredBlockEvent: Sendable,
-								Encodable {
+public enum MeasuredBlockEvent: Sendable {
 	case created(
 		blockId: UInt64,
 		checkpoint: Checkpoint,
@@ -28,6 +27,87 @@ public enum MeasuredBlockEvent: Sendable,
 		checkpoint: Checkpoint,
 		timestamp: MonotonicNanostamp = .now
 	)
+}
+
+extension MeasuredBlockEvent: Encodable {
+	// MARK: + Private scope
+
+	private enum CaseKey: String,
+						  CodingKey {
+		case created = "measuredblockevent_created"
+		case started = "measuredblockevent_started"
+		case completed = "measuredblockevent_completed"
+	}
+
+	private enum LabelKey: String,
+						   CodingKey {
+		case blockId
+		case checkpoint
+		case timestamp
+	}
+
+	// MARK: + Public scope
+
+	public func encode(to encoder: Encoder) throws {
+		var container = encoder
+			.container(keyedBy: CaseKey.self)
+
+		switch self {
+		case let .created(blockId, checkpoint, timestamp):
+			var payload = container.nestedContainer(
+				keyedBy: LabelKey.self,
+				forKey: CaseKey.created
+			)
+			try payload.encode(
+				blockId,
+				forKey: LabelKey.blockId
+			)
+			try payload.encode(
+				checkpoint,
+				forKey: LabelKey.checkpoint
+			)
+			try payload.encode(
+				timestamp,
+				forKey: LabelKey.timestamp
+			)
+
+		case let .started(blockId, checkpoint, timestamp):
+			var payload = container.nestedContainer(
+				keyedBy: LabelKey.self,
+				forKey: CaseKey.started
+			)
+			try payload.encode(
+				blockId,
+				forKey: LabelKey.blockId
+			)
+			try payload.encode(
+				checkpoint,
+				forKey: LabelKey.checkpoint
+			)
+			try payload.encode(
+				timestamp,
+				forKey: LabelKey.timestamp
+			)
+
+		case let .completed(blockId, checkpoint, timestamp):
+			var payload = container.nestedContainer(
+				keyedBy: LabelKey.self,
+				forKey: CaseKey.completed
+			)
+			try payload.encode(
+				blockId,
+				forKey: LabelKey.blockId
+			)
+			try payload.encode(
+				checkpoint,
+				forKey: LabelKey.checkpoint
+			)
+			try payload.encode(
+				timestamp,
+				forKey: LabelKey.timestamp
+			)
+		}
+	}
 }
 
 // MARK: - MeasuredBlock
