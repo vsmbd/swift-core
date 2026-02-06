@@ -29,6 +29,12 @@ public enum MeasuredBlockEvent: Sendable {
 	)
 }
 
+extension MeasuredBlockEvent {
+	static var sink: (@Sendable (MeasuredBlockEvent) -> Void)? {
+		eventSink
+	}
+}
+
 extension MeasuredBlockEvent: Encodable {
 	// MARK: + Private scope
 

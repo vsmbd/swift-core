@@ -40,7 +40,7 @@ public extension Entity {
 	///   - function: Call site function; defaults to `#function`.
 	///   - block: Closure to run (non-escaping).
 	@discardableResult
-	func measured<T>(
+	func measuredBlock<T>(
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function,
@@ -66,7 +66,7 @@ public extension Entity {
 	///   - function: Call site function; defaults to `#function`.
 	///   - block: Closure to run (non-escaping); may throw.
 	@discardableResult
-	func measured<T>(
+	func measuredBlock<T>(
 		file: StaticString = #fileID,
 		line: UInt = #line,
 		function: StaticString = #function,
@@ -83,5 +83,40 @@ public extension Entity {
 			block: block
 		)
 		return try syncBlock.execute(checkpoint)
+	}
+
+	@discardableResult
+	func measured<T>(
+		file: StaticString = #fileID,
+		line: UInt = #line,
+		function: StaticString = #function,
+		block: () throws -> T
+	) rethrows -> T {
+		let blockId = nextBlockID()
+
+		let checkpoint = Checkpoint.checkpoint(
+			self,
+			file: file,
+			line: line,
+			function: function
+		)
+
+		MeasuredBlockEvent.sink?(
+			.started(
+				blockId: blockId,
+				checkpoint: checkpoint
+			)
+		)
+
+		defer {
+			MeasuredBlockEvent.sink?(
+				.completed(
+					blockId: blockId,
+					checkpoint: checkpoint
+				)
+			)
+		}
+
+		return try block()
 	}
 }
